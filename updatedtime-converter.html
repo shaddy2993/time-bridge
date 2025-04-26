@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Time Bridge - Time Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(to bottom, #1a1a2e, #2c003e);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            background: #2d2d44;
+            border-radius: 16px;
+            padding: 30px 25px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+        }
+        h2 {
+            text-align: center;
+            color: #9d4edd;
+        }
+        h3 {
+            margin-top: 20px;
+            color: #dcdcdc;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 10px;
+            background: #3e3e5e;
+            color: #fff;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 8px;
+            background-color: #9d4edd;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #7b2cbf;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #f3f3f3;
+            background: #1e1e2e;
+            padding: 12px;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease-in-out;
+        }
+        .result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .extra-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Time Bridge</h2>
+
+    <h3>Your Details</h3>
+    <label for="your-timezone">Your Time Zone:</label>
+    <select id="your-timezone">
+        <option value="Asia/Karachi">Pakistan (PST)</option>
+        <option value="America/New_York">Eastern Time (ET)</option>
+        <option value="Europe/London">London Time (GMT)</option>
+        <option value="Europe/Paris">Paris Time (CET)</option>
+        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+        <option value="Australia/Sydney">Sydney Time (AET)</option>
+        <option value="Asia/Tokyo">Tokyo Time (JST)</option>
+        <option value="America/Chicago">Central Time (CT)</option>
+        <option value="Asia/Kolkata">India Standard Time (IST)</option>
+    </select>
+
+    <label for="meeting-time">Meeting Date & Time:</label>
+    <input type="datetime-local" id="meeting-time">
+
+    <h3>Client Details</h3>
+    <label for="client-timezone">Client's Time Zone:</label>
+    <select id="client-timezone">
+        <option value="Asia/Karachi">Pakistan (PST)</option>
+        <option value="America/New_York">Eastern Time (ET)</option>
+        <option value="Europe/London">London Time (GMT)</option>
+        <option value="Europe/Paris">Paris Time (CET)</option>
+        <option value="America/Los_Angeles">Pacific Time (PT)</option>
+        <option value="Australia/Sydney">Sydney Time (AET)</option>
+        <option value="Asia/Tokyo">Tokyo Time (JST)</option>
+        <option value="America/Chicago">Central Time (CT)</option>
+        <option value="Asia/Kolkata">India Standard Time (IST)</option>
+    </select>
+
+    <button onclick="convertTime()">Convert Time</button>
+
+    <div id="result" class="result"></div>
+
+    <div class="extra-buttons">
+        <button id="copy-btn" style="display:none;" onclick="copyResult()">Copy to Clipboard</button>
+        <button id="share-btn" style="display:none;" onclick="shareResult()">Share via WhatsApp/Email</button>
+        <button id="calendar-btn" style="display:none;" onclick="addToGoogleCalendar()">Add to Google Calendar</button>
+    </div>
+</div>
+
+<script>
+    function convertTime() {
+        const DateTime = luxon.DateTime;
+
+        const yourZone = document.getElementById("your-timezone").value;
+        const clientZone = document.getElementById("client-timezone").value;
+        const inputTime = document.getElementById("meeting-time").value;
+
+        if (!inputTime) {
+            alert("Please select date & time.");
+            return;
+        }
+
+        const dt = DateTime.fromISO(inputTime, { zone: yourZone });
+        const converted = dt.setZone(clientZone);
+        const formattedTime = converted.toFormat("cccc, dd LLL yyyy • hh:mm a");
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = `Converted Meeting Time: ${formattedTime}`;
+        resultDiv.classList.add("show");
+
+        // Show buttons
+        document.getElementById("copy-btn").style.display = "inline-block";
+        document.getElementById("share-btn").style.display = "inline-block";
+        document.getElementById("calendar-btn").style.display = "inline-block";
+
+        // Save to window for other buttons
+        window.latestFormattedTime = formattedTime;
+        window.latestDateISO = converted.toISO();
+    }
+
+    function copyResult() {
+        const text = document.getElementById("result").innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Copied to clipboard!");
+        });
+    }
+
+    function shareResult() {
+        const text = encodeURIComponent(`Hey! The meeting is at: ${window.latestFormattedTime}`);
+        const whatsappUrl = `https://wa.me/?text=${text}`;
+        const emailUrl = `mailto:?subject=Meeting Time&body=${text}`;
+
+        if (confirm("Share via WhatsApp? Press Cancel for Email.")) {
+            window.open(whatsappUrl, "_blank");
+        } else {
+            window.open(emailUrl, "_blank");
+        }
+    }
+
+    function addToGoogleCalendar() {
+        const start = window.latestDateISO;
+        const end = luxon.DateTime.fromISO(start).plus({ hours: 1 }).toISO();
+        const title = "Online Meeting";
+        const details = encodeURIComponent(`Meeting scheduled using Time Bridge: ${window.latestFormattedTime}`);
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start.replace(/-|:|\.\d+/g, '')}/${end.replace(/-|:|\.\d+/g, '')}&details=${details}`;
+        window.open(url, "_blank");
+    }
+</script>
+</body>
+</html>
